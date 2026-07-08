@@ -18,12 +18,12 @@ A simple soft renderer library for multicore CPU rendering in C++
 
 ## Final Goal
 
--- render an image purely by CPU that looks beautiful at the same time, fast
+render an image purely by CPU that looks **beautiful** at the same time, **fast**
 
 ## Reference
 
--- [Physical Based Rendering](<https://pbr-book.org/4ed/contents>) \
--- [Ray Tracing in One Weekend](https://raytracing.github.io/)
+- [Physical Based Rendering](https://pbr-book.org/4ed/contents) \
+- [Ray Tracing in One Weekend](https://raytracing.github.io/)
 
 ## License
 
