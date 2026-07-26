@@ -6,7 +6,7 @@
 
 namespace rc {
 
-enum class ShaderType { GreyNormal, ColoredNormal };
+enum class ShaderType { GreyNormal, ColoredNormal, OWRC, PBR };
 
 template <ShaderType S> class Shader {
 public:

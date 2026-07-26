@@ -23,7 +23,7 @@ int main() {
   rc::Camera camera({0, 0, 0}, 1.6, 0.9, w, h, 1., {0, 1, 0}, {0, 0, -1}, 1);
 
   rc::Film<w, h> film;
-  rc::Shader<rc::ShaderType::GreyNormal> shader;
+  rc::Shader<rc::ShaderType::ColoredNormal> shader;
   rc::Renderer renderer(scene, camera, shader, film);
 
   renderer.render();

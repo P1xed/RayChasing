@@ -21,10 +21,9 @@ Pixel Shader<ShaderType::GreyNormal>::shade(const Scene &sc,
   }
   if (hit.Miss())
     return {0., 0., 0.};
-  double grey = hit.normal_.x;
-  // double grey = glm::dot(hit.normal_, glm::normalize(glm::dvec3{1, 1, 1}));
-  grey += 1;
-  grey *= 0.5;
+  double grey = 0.5 * (hit.normal_.x + 1);
+  // double grey =
+  //     0.5 * (glm::dot(hit.normal_, glm::normalize(glm::dvec3{1, 1, 1})) + 1);
   return {grey, grey, grey};
 }
 

@@ -25,7 +25,7 @@ To render an image purely by CPU that looks **beautiful** at the same time, **fa
 
 ## Reference
 
-- [Physically Based Rendering](https://pbr-book.org/4ed/contents) \
+- [Physically Based Rendering](https://pbr-book.org/4ed/contents)
 - [Ray Tracing in One Weekend](https://raytracing.github.io/)
 
 ## License
