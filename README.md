@@ -15,7 +15,9 @@ A simple soft renderer library for multicore CPU rendering in C++
   - [x] write a buffer header
   - [x] write a scene parser
   - [x] write a camera
-  - [ ] implement a thread pool(memory pool probably)
+  - [ ] implement a thread pool(memory pool later)
+  - [ ] implement tagged pointer for multi-primitive intersect
+  - [ ] use .bin file for better storing
   - [ ] BVH optimization
 - [ ] make sure cross platform
 

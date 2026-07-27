@@ -15,8 +15,8 @@
 #include "stb_image_write.h"
 
 int main() {
-  constexpr std::size_t w = 1600;
-  constexpr std::size_t h = 900;
+  constexpr size_t w = 3840;
+  constexpr size_t h = 2160;
 
   rc::Scene scene("./rc.json");
 
@@ -24,13 +24,15 @@ int main() {
 
   rc::Film<w, h> film;
   rc::Shader<rc::ShaderType::ColoredNormal> shader;
-  rc::Renderer renderer(scene, camera, shader, film);
+  rc::Renderer renderer(scene, camera, shader, &film);
 
   renderer.render();
+  std::clog << "Render - Done\n";
   std::vector<uint8_t> image;
   renderer.exportImage(&image);
+  std::clog << "Export to Binary - Done\n";
 
   stbi_write_png("out.png", w, h, 3, image.data(), w * 3);
-  std::clog << "Done\n";
+  std::clog << "Export to png - Done\n";
   return 0;
 }

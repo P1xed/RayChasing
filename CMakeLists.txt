@@ -21,6 +21,8 @@ add_executable(
   ./resource/include/Scene.hpp
   ./resource/include/Shader.hpp
   ./resource/include/utils.hpp
+  ./resource/include/ThreadPool.hpp
+  ./resource/include/Primitives.hpp
 )
 
 target_include_directories(rc PRIVATE

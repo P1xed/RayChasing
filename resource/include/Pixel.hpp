@@ -4,9 +4,9 @@
 namespace rc {
 
 struct Pixel {
-  double r;
-  double g;
-  double b;
+  double r_;
+  double g_;
+  double b_;
 };
 
 } // namespace rc

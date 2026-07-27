@@ -15,23 +15,24 @@ struct Camera {
       : orig_(orig), maxDepth_(maxDepth_) {
     auto n_forward = glm::normalize(forward);
     auto n_up = glm::normalize(up);
-    u = (viewPortWidth / imageWidth) * glm::cross(n_forward, n_up);
-    v = -(viewPortHeight / imageHeight) * n_up;
-    higherLeftCorner = focalLength * n_forward +
-                       0.5 * viewPortWidth * glm::cross(n_up, n_forward) +
-                       0.5 * n_up * viewPortHeight + 0.5 * u + 0.5 * v;
+    u_ = (viewPortWidth / imageWidth) * glm::cross(n_forward, n_up);
+    v_ = -(viewPortHeight / imageHeight) * n_up;
+    higherLeftCorner_ = focalLength * n_forward +
+                        0.5 * viewPortWidth * glm::cross(n_up, n_forward) +
+                        0.5 * n_up * viewPortHeight + 0.5 * u_ + 0.5 * v_;
   }
 
   Ray get(size_t x, size_t y) const {
-    return {orig_, higherLeftCorner + static_cast<double>(x) * u +
-                       static_cast<double>(y) * v};
+    // TODO: maybe require optimization
+    return {orig_, higherLeftCorner_ + static_cast<double>(x) * u_ +
+                       static_cast<double>(y) * v_};
   }
 
   Ray operator()(size_t x, size_t y) const { return get(x, y); }
 
   glm::dvec3 orig_;
-  glm::dvec3 u, v;
-  glm::dvec3 higherLeftCorner;
+  glm::dvec3 u_, v_;
+  glm::dvec3 higherLeftCorner_;
   size_t maxDepth_;
 };
 

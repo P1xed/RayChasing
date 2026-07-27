@@ -1,6 +1,8 @@
 
 #include "Scene.hpp"
+#include "Primitives.hpp"
 #include "utils.hpp"
+#include <cstddef>
 #include <fstream>
 #include <stdexcept>
 
@@ -53,6 +55,13 @@ void Scene::loadPrimitives(const json &j) {
     loadFlatTri(&flatTris_, prims["flat_triangles"]);
   if (prims.contains("spheres"))
     loadSph(&sphs_, prims["spheres"]);
+
+  for (size_t i = 0; i != smoothTris_.size(); i++)
+    primitives.smoothTrisIndexs_.push_back(i);
+  for (size_t i = 0; i != flatTris_.size(); i++)
+    primitives.flatTrisIndexs_.push_back(i);
+  for (size_t i = 0; i != sphs_.size(); i++)
+    primitives.sphIndexs_.push_back(i);
 }
 
 Scene::Scene(const std::filesystem::path &jsonPath) {
