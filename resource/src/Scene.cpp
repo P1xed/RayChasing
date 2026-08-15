@@ -1,23 +1,26 @@
 
 #include "Scene.hpp"
-#include "Primitives.hpp"
+#include "PrimitiveView.hpp"
 #include "utils.hpp"
 #include <cstddef>
 #include <fstream>
+#include <stack>
 #include <stdexcept>
+#include <vector>
 
 namespace rc {
 namespace {
 using json = nlohmann::json;
 
 void loadSmoothTri(std::vector<SmoothTri> *tris, const json &j) {
-  for (auto const &s : j) {
+  (*tris).reserve(j.size());
+  for (json const &s : j) {
     SmoothTri t;
-    rc::staticFor<3>([&t, &s](auto i) {
+    rc::staticFor<3>([&t, &s](size_t i) {
       t.pos_[i] = {s["positions"][i][0], s["positions"][i][1],
                    s["positions"][i][2]};
     });
-    rc::staticFor<3>([&t, &s](auto i) {
+    rc::staticFor<3>([&t, &s](size_t i) {
       t.nor_[i] = {s["normals"][i][0], s["normals"][i][1], s["normals"][i][2]};
     });
     tris->push_back(t);
@@ -25,9 +28,10 @@ void loadSmoothTri(std::vector<SmoothTri> *tris, const json &j) {
 }
 
 void loadFlatTri(std::vector<FlatTri> *tris, const json &j) {
-  for (auto const &s : j) {
+  (*tris).reserve(j.size());
+  for (json const &s : j) {
     FlatTri t;
-    rc::staticFor<3>([&t, &s](auto i) {
+    rc::staticFor<3>([&t, &s](size_t i) {
       t.pos_[i] = {s["positions"][i][0], s["positions"][i][1],
                    s["positions"][i][2]};
     });
@@ -37,7 +41,8 @@ void loadFlatTri(std::vector<FlatTri> *tris, const json &j) {
 }
 
 void loadSph(std::vector<Sph> *sphs, const json &j) {
-  for (auto const &s : j) {
+  (*sphs).reserve(j.size());
+  for (json const &s : j) {
     Sph sp;
     sp.cen_ = glm::dvec3{s["center"][0], s["center"][1], s["center"][2]};
     sp.rad_ = s["radius"];
@@ -48,7 +53,7 @@ void loadSph(std::vector<Sph> *sphs, const json &j) {
 } // namespace
 
 void Scene::loadPrimitives(const json &j) {
-  const auto &prims = j["primitives"];
+  const json &prims = j["primitives"];
   if (prims.contains("triangles"))
     loadSmoothTri(&smoothTris_, prims["triangles"]);
   if (prims.contains("flat_triangles"))
@@ -56,12 +61,16 @@ void Scene::loadPrimitives(const json &j) {
   if (prims.contains("spheres"))
     loadSph(&sphs_, prims["spheres"]);
 
+  primitives_.primitiveIndexs_.reserve(smoothTris_.size()+flatTris_.size()+sphs_.size());
   for (size_t i = 0; i != smoothTris_.size(); i++)
-    primitives.smoothTrisIndexs_.push_back(i);
+    primitives_.primitiveIndexs_.push_back(
+        taggedIdx(static_cast<uint64_t>(i), PrimitiveType::SmoothTri));
   for (size_t i = 0; i != flatTris_.size(); i++)
-    primitives.flatTrisIndexs_.push_back(i);
+    primitives_.primitiveIndexs_.push_back(
+        taggedIdx(static_cast<uint64_t>(i), PrimitiveType::FlatTri));
   for (size_t i = 0; i != sphs_.size(); i++)
-    primitives.sphIndexs_.push_back(i);
+    primitives_.primitiveIndexs_.push_back(
+        taggedIdx(static_cast<uint64_t>(i), PrimitiveType::Sph));
 }
 
 Scene::Scene(const std::filesystem::path &jsonPath) {
@@ -70,6 +79,59 @@ Scene::Scene(const std::filesystem::path &jsonPath) {
     throw std::runtime_error("cannot open file: " + jsonPath.string());
   json data = json::parse(f);
   loadPrimitives(data);
+  buildBVH();
 }
+
+void Scene::buildBVH() {
+  BVHNodes_.clear();
+  BVHNode::build(primitives_, primitives_.getAABB(*this), this);
+}
+
+void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
+
+  struct Item {
+    size_t idx_;
+    double tNear_;
+  };
+
+
+  double t;
+  if (!BVHNodes_[0].box_.intersect(r, h->tMin_, h->tMax_, &t))
+    return; // TODO:mini-tree maybe better performance 
+
+  std::stack<Item> stack;
+  stack.push({0, t});
+
+  for (;!stack.empty();) {
+    Item it = stack.top();
+    stack.pop();
+    if (it.tNear_ >= h->tMax_)
+      continue;
+
+    const BVHNode &n = BVHNodes_[it.idx_];
+    if (n.left_ == SIZE_MAX) {
+      n.primitives_.intersect(*this, r, h);
+      continue;
+    }
+
+    double leftT, rightT;
+    bool ifHitLeft =
+        BVHNodes_[n.left_].box_.intersect(r, h->tMin_, h->tMax_, &leftT);
+    bool ifHitRight =
+        BVHNodes_[n.right_].box_.intersect(r, h->tMin_, h->tMax_, &rightT);
+    if (ifHitLeft && ifHitRight) {
+      if (leftT <= rightT) {
+        stack.push({n.right_, rightT});
+        stack.push({n.left_, leftT});
+      } else {
+        stack.push({n.left_, leftT});
+        stack.push({n.right_, rightT});
+      }
+    } else if (ifHitLeft)
+      stack.push({n.left_, leftT});
+    else if (ifHitRight)
+      stack.push({n.right_, rightT});
+  }
+} // TODO: bin split for better BVH tree quality
 
 } // namespace rc

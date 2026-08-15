@@ -11,10 +11,10 @@ namespace rc {
 struct Camera {
   Camera(glm::dvec3 orig, double viewPortWidth, double viewPortHeight,
          size_t imageWidth, size_t imageHeight, double focalLength,
-         glm::dvec3 up, glm::dvec3 forward, size_t maxDepth_)
-      : orig_(orig), maxDepth_(maxDepth_) {
-    auto n_forward = glm::normalize(forward);
-    auto n_up = glm::normalize(up);
+         glm::dvec3 up, glm::dvec3 forward, size_t maxDepth)
+      : orig_(orig), maxDepth_(maxDepth) {
+    glm::dvec3 n_forward = glm::normalize(forward);
+    glm::dvec3 n_up = glm::normalize(up);
     u_ = (viewPortWidth / imageWidth) * glm::cross(n_forward, n_up);
     v_ = -(viewPortHeight / imageHeight) * n_up;
     higherLeftCorner_ = focalLength * n_forward +

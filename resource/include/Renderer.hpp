@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <iostream>
 #include <vector>
+
 namespace rc {
 
 template <ShaderType S, size_t FilmW, size_t FilmH> class Renderer {
@@ -26,7 +27,10 @@ public:
   void render() {
     parallelFor<FilmH>([this](size_t y) {
       for (size_t x = 0; x != FilmW; x++) {
-        (*film_)[y * FilmW + x] = shader_.shade(scene_, camera_.get(x, y));
+        Ray r = camera_.get(x, y);
+        HitInfo hit;
+        scene_.intersectBVH(r, &hit);
+        (*film_)[y * FilmW + x] = shader_.shade(hit);
       }
     });
   }
@@ -37,14 +41,14 @@ public:
     parallelFor<FilmH>([&](size_t y) {
       for (size_t x = 0; x < FilmW; ++x) {
         size_t i = y * FilmW + x;
-        auto p = (*film_)[i];
+        Pixel p = (*film_)[i];
 #ifndef NDEBUG
         if (p.r_ < 0 or p.r_ > 1)
-          std::clog << "\'R\' out of bound\n";
+          std::cerr << "\'R\' out of bound\n";
         if (p.g_ < 0 or p.g_ > 1)
-          std::clog << "\'G\' out of bound\n";
+          std::cerr << "\'G\' out of bound\n";
         if (p.b_ < 0 or p.b_ > 1)
-          std::clog << "\'B\' out of bound\n";
+          std::cerr << "\'B\' out of bound\n";
 #endif
         (*image)[i * 3 + 0] = int(255.99 * p.r_);
         (*image)[i * 3 + 1] = int(255.99 * p.g_);

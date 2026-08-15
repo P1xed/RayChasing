@@ -9,6 +9,12 @@ A simple soft renderer library for multicore CPU rendering in C++
 - glm
 - nlohmann json
 
+## Build
+
+```bash
+cmake -S . -B build && cmake --build build/ && ./build/rc 
+```
+
 ## Todos
 
 - [ ] write a renderer
@@ -19,6 +25,8 @@ A simple soft renderer library for multicore CPU rendering in C++
   - [ ] implement tagged pointer for multi-primitive intersect
   - [ ] use .bin file for better storing
   - [ ] BVH optimization
+    - [ ] bin split
+    - [ ] mini-tree
 - [ ] make sure cross platform
 
 ## Final Goal

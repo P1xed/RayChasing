@@ -12,11 +12,13 @@
 #include <vector>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include "stb/stb_image_write.h"
 
 int main() {
   constexpr size_t w = 3840;
   constexpr size_t h = 2160;
+  // constexpr size_t w = 384;
+  // constexpr size_t h = 216;
 
   rc::Scene scene("./rc.json");
 
@@ -26,8 +28,9 @@ int main() {
   rc::Shader<rc::ShaderType::ColoredNormal> shader;
   rc::Renderer renderer(scene, camera, shader, &film);
 
+  std::clog << "Rendering";
   renderer.render();
-  std::clog << "Render - Done\n";
+  std::clog << "\rRender - Done\n";
   std::vector<uint8_t> image;
   renderer.exportImage(&image);
   std::clog << "Export to Binary - Done\n";

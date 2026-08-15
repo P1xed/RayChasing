@@ -11,6 +11,9 @@ add_executable(
   ./resource/main.cpp
   ./resource/src/Scene.cpp
   ./resource/src/Shader.cpp
+  ./resource/src/PrimitiveView.cpp
+  ./resource/src/Primitive.cpp
+  ./resource/src/BVH.cpp
   ./resource/include/Buffer.hpp
   ./resource/include/Camera.hpp
   ./resource/include/Film.hpp
@@ -22,13 +25,10 @@ add_executable(
   ./resource/include/Shader.hpp
   ./resource/include/utils.hpp
   ./resource/include/ThreadPool.hpp
-  ./resource/include/Primitives.hpp
+  ./resource/include/PrimitiveView.hpp
 )
 
 target_include_directories(rc PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/lib/glm
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/lib/pcg
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/lib/stb
-    ${CMAKE_CURRENT_SOURCE_DIR}/resource/lib/nlohmann
+    ${CMAKE_CURRENT_SOURCE_DIR}/resource/lib
 )

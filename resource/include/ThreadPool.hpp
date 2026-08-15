@@ -17,12 +17,12 @@ public:
 
   void runTasks() {
 
-    auto n = std::thread::hardware_concurrency();
+    unsigned int n = std::thread::hardware_concurrency();
 
     for (size_t i = 0; i != n; i++) {
       threads_.emplace_back(std::thread([this]() {
-        while (true) {
-          auto index = taskIndex_.fetch_add(1, std::memory_order::relaxed);
+        for (;;) {
+          size_t index = taskIndex_.fetch_add(1, std::memory_order::relaxed);
           if (index >= tasks_.size())
             return;
           tasks_[index]();
@@ -30,7 +30,7 @@ public:
       }));
     }
 
-    for (auto &t : threads_)
+    for (std::thread &t : threads_)
       t.join();
   }
 
@@ -41,6 +41,7 @@ public:
   }
 };
 
+// TODO: require better thread pool 
 class DynamicThreadPool {};
 
 } // namespace rc

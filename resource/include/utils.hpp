@@ -31,7 +31,7 @@ template <size_t I, typename F> void parallelFor(F &&f) {
         f(idx);
       }
     });
-  for (auto &t : threads)
+  for (std::thread &t : threads)
     t.join();
 }
 
