@@ -24,8 +24,9 @@ struct Camera {
 
   Ray get(size_t x, size_t y) const {
     // TODO: maybe require optimization
-    return {orig_, higherLeftCorner_ + static_cast<double>(x) * u_ +
-                       static_cast<double>(y) * v_};
+    glm::dvec3 dir = higherLeftCorner_ + static_cast<double>(x) * u_ +
+                     static_cast<double>(y) * v_;
+    return {orig_, dir, 1.0 / dir};
   }
 
   Ray operator()(size_t x, size_t y) const { return get(x, y); }

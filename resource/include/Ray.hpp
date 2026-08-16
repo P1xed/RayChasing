@@ -5,7 +5,7 @@
 namespace rc {
 
 struct Ray {
-  glm::dvec3 orig_, dir_;
+  glm::dvec3 orig_, dir_, invDir_;
   glm::dvec3 at(double t) const { return orig_ + t * dir_; }
 };
 

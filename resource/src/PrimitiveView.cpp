@@ -49,10 +49,13 @@ AABB PrimitiveView::getAABB(const Scene &sc) const {
     switch (objView.type_) {
     case PrimitiveType::SmoothTri:
       b = sc.smoothTris_[objView.value_].getAABB();
+      break;
     case PrimitiveType::FlatTri:
       b = sc.flatTris_[objView.value_].getAABB();
+      break;
     case PrimitiveType::Sph:
       b = sc.sphs_[objView.value_].getAABB();
+      break;
     }
     box.min_ = glm::min(box.min_, b.min_);
     box.max_ = glm::max(box.max_, b.max_);

@@ -6,7 +6,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <cmath>
 #include <glm/common.hpp>
 #include <glm/ext/vector_double3.hpp>
 
@@ -16,8 +15,8 @@ namespace rc {
 
 class Scene;
 struct AABB {
-  glm::dvec3 min_ = {};
-  glm::dvec3 max_ = {};
+  glm::dvec3 min_;
+  glm::dvec3 max_;
 
   void merge(const AABB &o) {
     min_ = glm::min(min_, o.min_);
@@ -41,23 +40,17 @@ struct AABB {
     return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
   }
 
-  bool intersect(const Ray &r, double tMin, double tMax,
-                 double *t) const {
+bool intersect(const Ray &r, double tMin, double tMax, double *t) const {
     double tmin = tMin, tmax = tMax;
     for (size_t i = 0; i < 3; i++) {
-      if (std::abs(r.dir_[i]) < 1e-12) {
-        if (r.orig_[i] < min_[i] || r.orig_[i] > max_[i])
-          return false;
-      } else {
-        double t0 = (min_[i] - r.orig_[i]) / r.dir_[i];
-        double t1 = (max_[i] - r.orig_[i]) / r.dir_[i];
-        if (t0 > t1)
-          std::swap(t0, t1);
-        tmin = std::max(tmin, t0);
-        tmax = std::min(tmax, t1);
-        if (tmin > tmax)
-          return false;
-      }
+      double t0 = (min_[i] - r.orig_[i]) * r.invDir_[i];
+      double t1 = (max_[i] - r.orig_[i]) * r.invDir_[i];
+      if (r.invDir_[i] < 0)
+        std::swap(t0, t1);
+      tmin = std::max(tmin, t0);
+      tmax = std::min(tmax, t1);
+      if (tmin > tmax)
+        return false;
     }
     *t = tmin;
     return true;
@@ -68,7 +61,7 @@ struct BVHNode {
   PrimitiveView primitives_;
   size_t left_ = SIZE_MAX;
   size_t right_ = SIZE_MAX;
-  AABB box_ = {};
+  AABB box_;
 
   static size_t build(const PrimitiveView &primitives, AABB box, Scene *sc);
 };

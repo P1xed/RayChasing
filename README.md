@@ -22,7 +22,7 @@ cmake -S . -B build && cmake --build build/ && ./build/rc
   - [x] write a scene parser
   - [x] write a camera
   - [ ] implement a thread pool(memory pool later)
-  - [ ] implement tagged pointer for multi-primitive intersect
+  - [x] implement tagged index for multi-primitive intersect(to optimize maybe?)
   - [ ] use .bin file for better storing
   - [ ] BVH optimization
     - [ ] bin split
