@@ -1,10 +1,9 @@
-#include "BVH.hpp"
 
+#include "BVH.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <glm/ext/vector_double3.hpp>
 #include <vector>
-
 #include "PrimitiveView.hpp"
 #include "Scene.hpp"
 #include "utils.hpp"
@@ -14,7 +13,9 @@ size_t rc::BVHNode::build(const PrimitiveView &primitives, AABB box,
   const size_t idx = sc->BVHNodes_.size();
   sc->BVHNodes_.emplace_back();
   sc->BVHNodes_[idx].box_ = box;
+  sc->BVHNodes_[idx].box_.padEpsilon();
   sc->BVHNodes_[idx].primitives_ = primitives;
+  sc->BVHNodes_[idx].left_= SIZE_MAX;
 
   if (primitives.size() > 8) {
     std::vector<glm::dvec3> centroids;
@@ -73,11 +74,13 @@ size_t rc::BVHNode::build(const PrimitiveView &primitives, AABB box,
     }
 
     if (left.size() != primitives.size() && !left.primitiveIndexs_.empty())
-      sc->BVHNodes_[idx].left_ =
-          build(left, left.getAABB(*sc).maxClip(axis, cMid), sc);
-    if (right.size() != primitives.size() && !right.primitiveIndexs_.empty())
-      sc->BVHNodes_[idx].right_ =
-          build(right, right.getAABB(*sc).minClip(axis, cMid), sc);
+      if (right.size() != primitives.size() &&
+          !right.primitiveIndexs_.empty()) {
+        sc->BVHNodes_[idx].left_ =
+            build(left, left.getAABB(*sc).maxClip(axis, cMid), sc);
+        sc->BVHNodes_[idx].right_ =
+            build(right, right.getAABB(*sc).minClip(axis, cMid), sc);
+      }
   }
 
   return idx;

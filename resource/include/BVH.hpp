@@ -1,15 +1,14 @@
 
 #pragma once
-
+#include <limits>
 #include <sys/types.h>
-
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <glm/common.hpp>
 #include <glm/ext/vector_double3.hpp>
-
 #include "PrimitiveView.hpp"
+#include "utils.hpp"
 
 namespace rc {
 
@@ -40,7 +39,7 @@ struct AABB {
     return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
   }
 
-bool intersect(const Ray &r, double tMin, double tMax, double *t) const {
+  bool intersect(const Ray &r, double tMin, double tMax, double *t) const {
     double tmin = tMin, tmax = tMax;
     for (size_t i = 0; i < 3; i++) {
       double t0 = (min_[i] - r.orig_[i]) * r.invDir_[i];
@@ -55,12 +54,19 @@ bool intersect(const Ray &r, double tMin, double tMax, double *t) const {
     *t = tmin;
     return true;
   }
+
+  void padEpsilon() {
+    staticFor<3>([this](size_t i) {
+      min_[i] -= std::numeric_limits<double>::epsilon();
+      max_[i] += std::numeric_limits<double>::epsilon();
+    });
+  }
 };
 
 struct BVHNode {
   PrimitiveView primitives_;
-  size_t left_ = SIZE_MAX;
-  size_t right_ = SIZE_MAX;
+  size_t left_;
+  size_t right_;
   AABB box_;
 
   static size_t build(const PrimitiveView &primitives, AABB box, Scene *sc);

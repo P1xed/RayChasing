@@ -25,8 +25,10 @@ cmake -S . -B build && cmake --build build/ && ./build/rc
   - [x] implement tagged index for multi-primitive intersect(to optimize maybe?)
   - [ ] use .bin file for better storing
   - [ ] BVH optimization
+    - [x] SBVH
     - [ ] bin split
     - [ ] mini-tree
+    - [ ] export BVH build method to main.cpp(can select performance later)
 - [ ] make sure cross platform
 
 ## Final Goal
