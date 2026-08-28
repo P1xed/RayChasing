@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <utility>
 #include <glm/ext/vector_double3.hpp>
 #include <vector>
 
@@ -32,8 +33,22 @@ public:
 
   void intersect(const Scene &sc, const Ray &r, HitInfo *h) const;
   void getCentroids(const Scene &sc, std::vector<glm::dvec3> *out) const;
+  void getAABBs(const Scene &sc, std::vector<AABB> *out) const;
   AABB getAABB(const Scene &sc) const;
   size_t size() const;
 };
+
+template <class SceneT, class F>
+decltype(auto) visitPrimitive(const SceneT &sc, const taggedIdx &p, F &&f) {
+  switch (p.type_) {
+  case PrimitiveType::SmoothTri:
+    return std::forward<F>(f)(sc.smoothTris_[p.value_]);
+  case PrimitiveType::FlatTri:
+    return std::forward<F>(f)(sc.flatTris_[p.value_]);
+  case PrimitiveType::Sph:
+    return std::forward<F>(f)(sc.sphs_[p.value_]);
+  }
+  std::unreachable();
+}
 
 } // namespace rc

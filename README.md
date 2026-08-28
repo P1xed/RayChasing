@@ -24,6 +24,8 @@ cmake -S . -B build && cmake --build build/ && ./build/rc
   - [ ] implement a thread pool(memory pool later)
   - [x] implement tagged index for multi-primitive intersect(to optimize maybe?)
   - [ ] use .bin file for better storing
+  - [ ] multiple type primitive(need optimization by template)
+  - [ ] hot loop need optimization
   - [ ] BVH optimization
     - [x] SBVH
     - [ ] bin split

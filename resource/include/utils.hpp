@@ -9,7 +9,7 @@
 
 namespace rc {
 
-template <size_t I, typename F> void staticFor(F &&f) {
+template <size_t I, typename F> void static_for(F &&f) {
   []<size_t... Is>(F &&f, std::index_sequence<Is...>) {
     (f(std::integral_constant<size_t, Is>{}), ...);
   }(std::forward<F>(f), std::make_index_sequence<I>{});

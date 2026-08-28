@@ -17,8 +17,6 @@
 int main() {
   constexpr size_t w = 3840;
   constexpr size_t h = 2160;
-  // constexpr size_t w = 384;
-  // constexpr size_t h = 216;
 
   rc::Scene scene("./rc.json");
 

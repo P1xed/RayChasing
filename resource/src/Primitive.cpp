@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <glm/geometric.hpp>
 #include <utility>
 
@@ -33,7 +32,7 @@ void rc::SmoothTri::intersect(const Ray &r, HitInfo *h) const {
 
 rc::AABB rc::SmoothTri::getAABB() const {
   glm::dvec3 min, max;
-  staticFor<3>([&](size_t axis) {
+  static_for<3>([&](auto axis) {
     min[axis] = std::min({pos_[0][axis], pos_[1][axis], pos_[2][axis]});
     max[axis] = std::max({pos_[0][axis], pos_[1][axis], pos_[2][axis]});
   });
@@ -69,7 +68,7 @@ void rc::FlatTri::intersect(const Ray &r, HitInfo *h) const {
 
 rc::AABB rc::FlatTri::getAABB() const {
   glm::dvec3 min, max;
-  staticFor<3>([&](size_t axis) {
+  static_for<3>([&](auto axis) {
     min[axis] = std::min({pos_[0][axis], pos_[1][axis], pos_[2][axis]});
     max[axis] = std::max({pos_[0][axis], pos_[1][axis], pos_[2][axis]});
   });

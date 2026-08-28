@@ -14,6 +14,7 @@ public:
   std::vector<FlatTri> flatTris_;
   std::vector<Sph> sphs_;
   std::vector<BVHNode> BVHNodes_;
+  std::vector<BVHLeaf> BVHLeaves_;
   PrimitiveView primitives_;
 
   Scene(const Scene &) = delete;

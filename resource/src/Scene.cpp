@@ -4,7 +4,6 @@
 #include "utils.hpp"
 #include <cstddef>
 #include <fstream>
-#include <stack>
 #include <stdexcept>
 #include <vector>
 
@@ -16,11 +15,11 @@ void loadSmoothTri(std::vector<SmoothTri> *tris, const json &j) {
   (*tris).reserve(j.size());
   for (json const &s : j) {
     SmoothTri t;
-    rc::staticFor<3>([&t, &s](size_t i) {
+    rc::static_for<3>([&t, &s](auto i) {
       t.pos_[i] = {s["positions"][i][0], s["positions"][i][1],
                    s["positions"][i][2]};
     });
-    rc::staticFor<3>([&t, &s](size_t i) {
+    rc::static_for<3>([&t, &s](auto i) {
       t.nor_[i] = {s["normals"][i][0], s["normals"][i][1], s["normals"][i][2]};
     });
     tris->push_back(t);
@@ -31,7 +30,7 @@ void loadFlatTri(std::vector<FlatTri> *tris, const json &j) {
   (*tris).reserve(j.size());
   for (json const &s : j) {
     FlatTri t;
-    rc::staticFor<3>([&t, &s](size_t i) {
+    rc::static_for<3>([&t, &s](auto i) {
       t.pos_[i] = {s["positions"][i][0], s["positions"][i][1],
                    s["positions"][i][2]};
     });
@@ -84,7 +83,14 @@ Scene::Scene(const std::filesystem::path &jsonPath) {
 
 void Scene::buildBVH() {
   BVHNodes_.clear();
-  BVHNode::build(primitives_, primitives_.getAABB(*this), this);
+  BVHLeaves_.clear();
+  std::vector<BVHRef> refs;
+  refs.reserve(primitives_.primitiveIndexs_.size());
+  for (const taggedIdx &p : primitives_.primitiveIndexs_) {
+    AABB a = visitPrimitive(*this, p, [](const auto &prim) { return prim.getAABB(); });
+    refs.push_back({p, a});
+  }
+  BVHNode::build(std::move(refs), this);
 }
 
 void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
@@ -94,23 +100,23 @@ void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
     double tNear_;
   };
 
-
   double t;
   if (!BVHNodes_[0].box_.intersect(r, h->tMin_, h->tMax_, &t))
     return; // TODO:mini-tree maybe better performance 
 
-  std::stack<Item> stack;
-  stack.push({0, t});
+  std::vector<Item> stack;
+  stack.reserve(128);
+  stack.push_back({0, t});
 
-  for (;!stack.empty();) {
-    Item it = stack.top();
-    stack.pop();
+  for (; !stack.empty();) {
+    Item it = stack.back();
+    stack.pop_back();
     if (it.tNear_ >= h->tMax_)
       continue;
 
     const BVHNode &n = BVHNodes_[it.idx_];
-    if (n.left_ == SIZE_MAX) {
-      n.primitives_.intersect(*this, r, h);
+    if (n.left_ == BVH_LEAF_FLAG) {
+      BVHLeaves_[n.right_].primitives_.intersect(*this, r, h);
       continue;
     }
 
@@ -121,16 +127,16 @@ void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
         BVHNodes_[n.right_].box_.intersect(r, h->tMin_, h->tMax_, &rightT);
     if (ifHitLeft && ifHitRight) {
       if (leftT <= rightT) {
-        stack.push({n.right_, rightT});
-        stack.push({n.left_, leftT});
+        stack.push_back({n.right_, rightT});
+        stack.push_back({n.left_, leftT});
       } else {
-        stack.push({n.left_, leftT});
-        stack.push({n.right_, rightT});
+        stack.push_back({n.left_, leftT});
+        stack.push_back({n.right_, rightT});
       }
     } else if (ifHitLeft)
-      stack.push({n.left_, leftT});
+      stack.push_back({n.left_, leftT});
     else if (ifHitRight)
-      stack.push({n.right_, rightT});
+      stack.push_back({n.right_, rightT});
   }
 } // TODO: bin split for better BVH tree quality
 

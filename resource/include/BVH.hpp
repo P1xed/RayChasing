@@ -1,75 +1,46 @@
 
 #pragma once
-#include <limits>
-#include <sys/types.h>
-#include <algorithm>
+#include "PrimitiveView.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <glm/common.hpp>
 #include <glm/ext/vector_double3.hpp>
-#include "PrimitiveView.hpp"
-#include "utils.hpp"
+#include <limits>
+#include <sys/types.h>
 
 namespace rc {
 
+constexpr size_t BVH_LEAF_FLAG = std::numeric_limits<uint32_t>::max();
+
 class Scene;
 struct AABB {
-  glm::dvec3 min_;
-  glm::dvec3 max_;
+  glm::dvec3 min_ = glm::dvec3(+std::numeric_limits<double>::max());
+  glm::dvec3 max_ = glm::dvec3(-std::numeric_limits<double>::max());
 
-  void merge(const AABB &o) {
-    min_ = glm::min(min_, o.min_);
-    max_ = glm::max(max_, o.max_);
-  }
+  void merge(const AABB &o);
+  AABB minClip(uint8_t axis, double x);
+  AABB maxClip(uint8_t axis, double x);
+  double surfaceArea() const;
+  bool intersect(const Ray &r, double tMin, double tMax, double *t) const;
+};
 
-  AABB minClip(uint8_t axis, double x) {
-    if (min_[axis] < x)
-      min_[axis] = x;
-    return *this;
-  }
+struct BVHRef {
+  taggedIdx idx_;
+  AABB box_;
+};
 
-  AABB maxClip(uint8_t axis, double x) {
-    if (max_[axis] > x)
-      max_[axis] = x;
-    return *this;
-  }
-
-  double surfaceArea() const {
-    glm::dvec3 d = max_ - min_;
-    return 2.0 * (d.x * d.y + d.y * d.z + d.z * d.x);
-  }
-
-  bool intersect(const Ray &r, double tMin, double tMax, double *t) const {
-    double tmin = tMin, tmax = tMax;
-    for (size_t i = 0; i < 3; i++) {
-      double t0 = (min_[i] - r.orig_[i]) * r.invDir_[i];
-      double t1 = (max_[i] - r.orig_[i]) * r.invDir_[i];
-      if (r.invDir_[i] < 0)
-        std::swap(t0, t1);
-      tmin = std::max(tmin, t0);
-      tmax = std::min(tmax, t1);
-      if (tmin > tmax)
-        return false;
-    }
-    *t = tmin;
-    return true;
-  }
-
-  void padEpsilon() {
-    staticFor<3>([this](size_t i) {
-      min_[i] -= std::numeric_limits<double>::epsilon();
-      max_[i] += std::numeric_limits<double>::epsilon();
-    });
-  }
+struct BVHLeaf {
+  PrimitiveView primitives_;
 };
 
 struct BVHNode {
-  PrimitiveView primitives_;
-  size_t left_;
-  size_t right_;
+  uint32_t left_, right_;
   AABB box_;
 
-  static size_t build(const PrimitiveView &primitives, AABB box, Scene *sc);
+  static size_t build(std::vector<BVHRef> refs, Scene *sc);
+  static size_t build(std::vector<BVHRef> refs, AABB box, Scene *sc);
+  static size_t newNode(Scene *sc);
+  static size_t newLeaf(const std::vector<BVHRef> &refs, Scene *sc);
 };
 
 } // namespace rc
