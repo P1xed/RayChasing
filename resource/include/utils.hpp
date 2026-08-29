@@ -15,7 +15,7 @@ template <size_t I, typename F> void static_for(F &&f) {
   }(std::forward<F>(f), std::make_index_sequence<I>{});
 }
 
-template <size_t I, typename F> void parallelFor(F &&f) {
+template <size_t I, typename F> void parallel_for(F &&f) {
   if constexpr (I == 0)
     return;
   size_t n = std::thread::hardware_concurrency();

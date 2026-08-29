@@ -8,7 +8,6 @@
 #include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <vector>
 
 namespace rc {
@@ -25,7 +24,7 @@ public:
       : scene_(scene), camera_(camera), shader_(shader), film_(film) {}
 
   void render() {
-    parallelFor<FilmH>([this](size_t y) {
+    parallel_for<FilmH>([this](size_t y) {
       for (size_t x = 0; x != FilmW; x++) {
         Ray r = camera_.get(x, y);
         HitInfo hit;
@@ -38,7 +37,7 @@ public:
   void exportImage(std::vector<uint8_t> *image) {
     image->resize(FilmH * FilmW * 3);
 
-    parallelFor<FilmH>([&](size_t y) {
+    parallel_for<FilmH>([&](size_t y) {
       for (size_t x = 0; x < FilmW; ++x) {
         size_t i = y * FilmW + x;
         Pixel p = (*film_)[i];

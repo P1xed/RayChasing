@@ -100,7 +100,7 @@ size_t rc::BVHNode::build(std::vector<BVHRef> refs, AABB box, Scene *sc) {
     visitPrimitive(*sc, ref.idx_, [&](const auto &prim) {
       int binIdx = static_cast<int>(
           (prim.getCentroid()[bestAxis] - axisMin[bestAxis]) / binStep);
-      binIdx = static_cast<int>(binNum) - 1;
+      binIdx = std::clamp(binIdx, 0, static_cast<int>(binNum) - 1);
       auto &[count, box] = bins[binIdx];
       count++;
       box.merge(ref.box_);

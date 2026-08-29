@@ -2,6 +2,7 @@
 #include "Scene.hpp"
 #include "PrimitiveView.hpp"
 #include "utils.hpp"
+#include <array>
 #include <cstddef>
 #include <fstream>
 #include <stdexcept>
@@ -60,7 +61,8 @@ void Scene::loadPrimitives(const json &j) {
   if (prims.contains("spheres"))
     loadSph(&sphs_, prims["spheres"]);
 
-  primitives_.primitiveIndexs_.reserve(smoothTris_.size()+flatTris_.size()+sphs_.size());
+  primitives_.primitiveIndexs_.reserve(smoothTris_.size() + flatTris_.size() +
+                                       sphs_.size());
   for (size_t i = 0; i != smoothTris_.size(); i++)
     primitives_.primitiveIndexs_.push_back(
         taggedIdx(static_cast<uint64_t>(i), PrimitiveType::SmoothTri));
@@ -87,7 +89,8 @@ void Scene::buildBVH() {
   std::vector<BVHRef> refs;
   refs.reserve(primitives_.primitiveIndexs_.size());
   for (const taggedIdx &p : primitives_.primitiveIndexs_) {
-    AABB a = visitPrimitive(*this, p, [](const auto &prim) { return prim.getAABB(); });
+    AABB a = visitPrimitive(*this, p,
+                            [](const auto &prim) { return prim.getAABB(); });
     refs.push_back({p, a});
   }
   BVHNode::build(std::move(refs), this);
@@ -102,15 +105,14 @@ void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
 
   double t;
   if (!BVHNodes_[0].box_.intersect(r, h->tMin_, h->tMax_, &t))
-    return; // TODO:mini-tree maybe better performance 
+    return; // TODO:mini-tree maybe better performance
 
-  std::vector<Item> stack;
-  stack.reserve(128);
-  stack.push_back({0, t});
+  std::array<Item, 128> stack;
+  size_t sp = 0;
+  stack[sp++] = {0, t};
 
-  for (; !stack.empty();) {
-    Item it = stack.back();
-    stack.pop_back();
+  while (sp > 0) {
+    Item it = stack[--sp];
     if (it.tNear_ >= h->tMax_)
       continue;
 
@@ -127,17 +129,17 @@ void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
         BVHNodes_[n.right_].box_.intersect(r, h->tMin_, h->tMax_, &rightT);
     if (ifHitLeft && ifHitRight) {
       if (leftT <= rightT) {
-        stack.push_back({n.right_, rightT});
-        stack.push_back({n.left_, leftT});
+        stack[sp++] = {n.right_, rightT};
+        stack[sp++] = {n.left_, leftT};
       } else {
-        stack.push_back({n.left_, leftT});
-        stack.push_back({n.right_, rightT});
+        stack[sp++] = {n.left_, leftT};
+        stack[sp++] = {n.right_, rightT};
       }
     } else if (ifHitLeft)
-      stack.push_back({n.left_, leftT});
+      stack[sp++] = {n.left_, leftT};
     else if (ifHitRight)
-      stack.push_back({n.right_, rightT});
+      stack[sp++] = {n.right_, rightT};
   }
-} // TODO: bin split for better BVH tree quality
+}
 
 } // namespace rc
