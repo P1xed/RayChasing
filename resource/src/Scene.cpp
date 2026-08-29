@@ -86,14 +86,7 @@ Scene::Scene(const std::filesystem::path &jsonPath) {
 void Scene::buildBVH() {
   BVHNodes_.clear();
   BVHLeaves_.clear();
-  std::vector<BVHRef> refs;
-  refs.reserve(primitives_.primitiveIndexs_.size());
-  for (const taggedIdx &p : primitives_.primitiveIndexs_) {
-    AABB a = visitPrimitive(*this, p,
-                            [](const auto &prim) { return prim.getAABB(); });
-    refs.push_back({p, a});
-  }
-  BVHNode::build(std::move(refs), this);
+  BVHNode::buildRoot(this);
 }
 
 void Scene::intersectBVH(const Ray &r, HitInfo *h) const {

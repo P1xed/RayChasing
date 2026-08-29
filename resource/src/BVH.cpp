@@ -51,13 +51,35 @@ bool rc::AABB::intersect(const Ray &r, double tMin, double tMax,
   return true;
 }
 
-size_t rc::BVHNode::build(std::vector<BVHRef> refs, Scene *sc) {
+static rc::AABB mergeRefs(const std::vector<rc::BVHRef> &refs) {
+  rc::AABB a, b, c, d;
+  size_t i = 0;
+  for (; i + 3 < refs.size(); i += 4) {
+    a.merge(refs[i].box_);
+    b.merge(refs[i + 1].box_);
+    c.merge(refs[i + 2].box_);
+    d.merge(refs[i + 3].box_);
+  }
+  for (; i < refs.size(); ++i)
+    a.merge(refs[i].box_);
+  a.merge(b);
+  a.merge(c);
+  a.merge(d);
+  return a;
+}
+
+size_t rc::BVHNode::buildRoot(Scene *sc) {
+  std::vector<BVHRef> refs;
+  refs.reserve(sc->primitives_.primitiveIndexs_.size());
+  for (const auto &primitive : sc->primitives_.primitiveIndexs_) {
+    visitPrimitive(*sc, primitive, [&](auto prim) {
+      refs.push_back(BVHRef{primitive, prim.getAABB()});
+    });
+  }
   if (refs.size() < 8)
     return newLeaf(refs, sc);
 
-  AABB box;
-  for (const auto &r : refs)
-    box.merge(r.box_);
+  AABB box = mergeRefs(refs);
   return build(std::move(refs), box, sc);
 }
 
@@ -87,47 +109,71 @@ size_t rc::BVHNode::build(std::vector<BVHRef> refs, AABB box, Scene *sc) {
     }
   });
 
-  double minC = axisMin[bestAxis];
   double binStep = axisExtent[bestAxis] / binNum;
 
   double parentSAH = box.surfaceArea() * refs.size();
   double bestSAH = parentSAH;
-  double bestSplitSurface = minC + axisExtent[bestAxis] * .5;
+  double bestSplitSurface = axisMin[bestAxis] + axisExtent[bestAxis] * .5;
 
   std::array<std::pair<uint32_t, AABB>, binNum> bins;
 
   for (const auto &ref : refs) {
-    visitPrimitive(*sc, ref.idx_, [&](const auto &prim) {
-      int binIdx = static_cast<int>(
-          (prim.getCentroid()[bestAxis] - axisMin[bestAxis]) / binStep);
-      binIdx = std::clamp(binIdx, 0, static_cast<int>(binNum) - 1);
-      auto &[count, box] = bins[binIdx];
-      count++;
-      box.merge(ref.box_);
-    });
+    double c = 0.5 * (ref.box_.min_[bestAxis] + ref.box_.max_[bestAxis]);
+    int binIdx = static_cast<int>((c - axisMin[bestAxis]) / binStep);
+    binIdx = std::clamp(binIdx, 0, static_cast<int>(binNum) - 1);
+    auto &[count, box] = bins[binIdx];
+    count++;
+    box.merge(ref.box_);
   }
 
+  std::array<std::pair<uint32_t, AABB>, binNum> leftAccum;
+  std::array<std::pair<uint32_t, AABB>, binNum> rightAccum;
+
+  {
+    auto &[refCount, refBox] = bins[0];
+    leftAccum[0] = std::make_pair(refCount, refBox);
+    for (size_t i = 1; i < binNum; i++) {
+      auto &[refCount, refBox] = bins[i];
+      auto &[count, box] = leftAccum[i];
+      auto &[prevCount, prevBox] = leftAccum[i - 1];
+      count = prevCount + refCount;
+      box.merge(prevBox);
+      box.merge(refBox);
+    }
+  }
+
+  {
+    auto &[refCount, refBox] = bins[binNum - 1];
+    rightAccum[binNum - 1] = std::make_pair(refCount, refBox);
+    for (size_t i = binNum - 1; i-- > 0;) {
+      auto &[refCount, refBox] = bins[i];
+      auto &[count, box] = rightAccum[i];
+      auto &[nextCount, nextBox] = rightAccum[i + 1];
+      count = nextCount + refCount;
+      box.merge(nextBox);
+      box.merge(refBox);
+    }
+  }
   for (size_t i = 0; i != binNum - 1; i++) {
     double SplitSurface = axisMin[bestAxis] + (i + 1) * binStep;
 
     uint32_t leftCount = 0, rightCount = 0;
     AABB leftBox, rightBox;
 
-    for (size_t j = 0; j != binNum - 1; j++) {
-      auto &[count, box] = bins[j];
-      if (j <= i) {
-        leftCount += count;
-        leftBox.merge(box);
-      } else {
-        rightCount += count;
-        rightBox.merge(box);
-      }
-    }// TODO: fix this: O(N²)
+    auto &[laCount, laBox] = leftAccum[i];
+    auto &[raCount, raBox] = rightAccum[i + 1];
 
-    double sah =
+    leftCount = laCount;
+    leftBox = laBox;
+    leftBox.maxClip(bestAxis, SplitSurface);
+    rightCount = raCount;
+    rightBox = raBox;
+    rightBox.minClip(bestAxis, SplitSurface);
+
+    double SAH =
         leftBox.surfaceArea() * leftCount + rightBox.surfaceArea() * rightCount;
-    if (sah < bestSAH) {
-      bestSAH = sah;
+    if (SAH < bestSAH) {
+      bestSAH = SAH;
       bestSplitSurface = SplitSurface;
     }
   }
@@ -151,12 +197,8 @@ size_t rc::BVHNode::build(std::vector<BVHRef> refs, AABB box, Scene *sc) {
       rightRefs.size() == refs.size())
     return newLeaf(refs, sc);
 
-  AABB leftBox;
-  AABB rightBox;
-  for (const auto &r : leftRefs)
-    leftBox.merge(r.box_);
-  for (const auto &r : rightRefs)
-    rightBox.merge(r.box_);
+  AABB leftBox = mergeRefs(leftRefs);
+  AABB rightBox = mergeRefs(rightRefs);
   leftBox.maxClip(bestAxis, bestSplitSurface);
   rightBox.minClip(bestAxis, bestSplitSurface);
 
@@ -178,9 +220,7 @@ size_t rc::BVHNode::newNode(Scene *sc) {
 }
 
 size_t rc::BVHNode::newLeaf(const std::vector<BVHRef> &refs, Scene *sc) {
-  AABB box;
-  for (const auto &r : refs)
-    box.merge(r.box_);
+  AABB box = mergeRefs(refs);
   const size_t idx = newNode(sc);
   BVHNode &node = sc->BVHNodes_[idx];
   node.box_ = box;

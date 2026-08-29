@@ -37,7 +37,7 @@ struct BVHNode {
   uint32_t left_, right_;
   AABB box_;
 
-  static size_t build(std::vector<BVHRef> refs, Scene *sc);
+  static size_t buildRoot(Scene *sc);
   static size_t build(std::vector<BVHRef> refs, AABB box, Scene *sc);
   static size_t newNode(Scene *sc);
   static size_t newLeaf(const std::vector<BVHRef> &refs, Scene *sc);
