@@ -41,7 +41,7 @@ public:
   }
 };
 
-// TODO: require better thread pool 
+// TODO: require better thread pool
 class DynamicThreadPool {};
 
 } // namespace rc

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <fstream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace rc {
@@ -91,47 +92,43 @@ void Scene::buildBVH() {
 
 void Scene::intersectBVH(const Ray &r, HitInfo *h) const {
 
-  struct Item {
-    size_t idx_;
-    double tNear_;
-  };
-
   double t;
   if (!BVHNodes_[0].box_.intersect(r, h->tMin_, h->tMax_, &t))
-    return; // TODO:mini-tree maybe better performance
+    return;
 
-  std::array<Item, 128> stack;
+  std::array<std::pair<size_t, double>, 128> BVHNodeStack;
   size_t sp = 0;
-  stack[sp++] = {0, t};
+  BVHNodeStack[sp++] = {0, t};
 
   while (sp > 0) {
-    Item it = stack[--sp];
-    if (it.tNear_ >= h->tMax_)
+    auto &[idx, tNear] = BVHNodeStack[--sp];
+    if (tNear >= h->tMax_)
       continue;
 
-    const BVHNode &n = BVHNodes_[it.idx_];
+    const BVHNode &n = BVHNodes_[idx];
     if (n.left_ == BVH_LEAF_FLAG) {
       BVHLeaves_[n.right_].primitives_.intersect(*this, r, h);
       continue;
-    }
+    } else {
 
-    double leftT, rightT;
-    bool ifHitLeft =
-        BVHNodes_[n.left_].box_.intersect(r, h->tMin_, h->tMax_, &leftT);
-    bool ifHitRight =
-        BVHNodes_[n.right_].box_.intersect(r, h->tMin_, h->tMax_, &rightT);
-    if (ifHitLeft && ifHitRight) {
-      if (leftT <= rightT) {
-        stack[sp++] = {n.right_, rightT};
-        stack[sp++] = {n.left_, leftT};
-      } else {
-        stack[sp++] = {n.left_, leftT};
-        stack[sp++] = {n.right_, rightT};
-      }
-    } else if (ifHitLeft)
-      stack[sp++] = {n.left_, leftT};
-    else if (ifHitRight)
-      stack[sp++] = {n.right_, rightT};
+      double leftT, rightT;
+      bool ifHitLeft =
+          BVHNodes_[n.left_].box_.intersect(r, h->tMin_, h->tMax_, &leftT);
+      bool ifHitRight =
+          BVHNodes_[n.right_].box_.intersect(r, h->tMin_, h->tMax_, &rightT);
+      if (ifHitLeft && ifHitRight) {
+        if (leftT <= rightT) {
+          BVHNodeStack[sp++] = {n.right_, rightT};
+          BVHNodeStack[sp++] = {n.left_, leftT};
+        } else {
+          BVHNodeStack[sp++] = {n.left_, leftT};
+          BVHNodeStack[sp++] = {n.right_, rightT};
+        }
+      } else if (ifHitLeft)
+        BVHNodeStack[sp++] = {n.left_, leftT};
+      else if (ifHitRight)
+        BVHNodeStack[sp++] = {n.right_, rightT};
+    }
   }
 }
 

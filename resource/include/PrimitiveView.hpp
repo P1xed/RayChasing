@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
 #include <glm/ext/vector_double3.hpp>
+#include <utility>
 #include <vector>
 
 #include "Hit.hpp"
@@ -22,8 +22,8 @@ class Scene;
 class AABB;
 class PrimitiveView {
 public:
-  std::vector<taggedIdx>
-      primitiveIndexs_; // TODO maybe later indexs can be strore sperately by tmeplate
+  std::vector<taggedIdx> primitiveIndexs_; // TODO maybe later indexs can be
+                                           // strore sperately by tmeplate
 
   PrimitiveView() = default;
   PrimitiveView(const PrimitiveView &) = delete;

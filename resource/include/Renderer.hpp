@@ -30,7 +30,7 @@ public:
         Ray r = camera_.get(x, y);
         HitInfo hit;
         scene_.intersectBVH(r, &hit);
-        (*film_)[y * FilmW + x] = shader_.shade(hit);
+        (*film_)[(y * FilmW) + x] = shader_.shade(hit);
       }
     });
   }
@@ -40,7 +40,7 @@ public:
 
     parallel_for<FilmH>([&](size_t y) {
       for (size_t x = 0; x < FilmW; ++x) {
-        size_t i = y * FilmW + x;
+        size_t i = (y * FilmW) + x;
         Pixel p = (*film_)[i];
 #ifndef NDEBUG
         if (p.r_ < 0 or p.r_ > 1)
@@ -50,9 +50,9 @@ public:
         if (p.b_ < 0 or p.b_ > 1)
           std::cerr << "\'B\' out of bound\n";
 #endif
-        (*image)[i * 3 + 0] = int(255.99 * p.r_);
-        (*image)[i * 3 + 1] = int(255.99 * p.g_);
-        (*image)[i * 3 + 2] = int(255.99 * p.b_);
+        (*image)[(i * 3) + 0] = static_cast<int>(255.99 * p.r_);
+        (*image)[(i * 3) + 1] = static_cast<int>(255.99 * p.g_);
+        (*image)[(i * 3) + 2] = static_cast<int>(255.99 * p.b_);
       }
     });
   }
